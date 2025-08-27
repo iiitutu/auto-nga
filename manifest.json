@@ -1,0 +1,24 @@
+{
+  "manifest_version": 3,
+  "name": "NGA Forum Enhancer",
+  "version": "1.0",
+  "description": "Enhance NGA forum experience with AI-powered post editing.",
+  "permissions": [
+    "activeTab",
+    "storage"
+  ],
+  "host_permissions": [
+    "*://bbs.nga.cn/*",
+    "*://nga.178.com/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["*://bbs.nga.cn/*", "*://nga.178.com/*"],
+      "js": ["content.js"]
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "NGA Forum Enhancer"
+  }
+}

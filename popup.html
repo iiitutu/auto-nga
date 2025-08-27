@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body {
+      width: 300px;
+      padding: 10px;
+      font-family: Arial, sans-serif;
+    }
+    
+    #api-key-input {
+      width: 100%;
+      margin-bottom: 10px;
+      padding: 5px;
+    }
+    
+    button {
+      width: 100%;
+      padding: 8px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    
+    button:hover {
+      background-color: #45a049;
+    }
+    
+    #status {
+      margin-top: 10px;
+      font-size: 12px;
+      color: #666;
+    }
+  </style>
+</head>
+<body>
+  <input type="password" id="api-key-input" placeholder="Enter your API key">
+  <button id="save-key">Save API Key</button>
+  <div id="status"></div>
+  
+  <script src="popup.js"></script>
+</body>
+</html>
