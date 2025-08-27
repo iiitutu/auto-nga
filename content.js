@@ -18,6 +18,55 @@
         return editorSelector.some(selector => document.querySelector(selector) !== null);
     }
 
+    // 获取被回复楼层的内容
+    async function getQuotedPostContent() {
+        // 检查是否是回复页面
+        const urlParams = new URLSearchParams(window.location.search);
+        const article = urlParams.get('article');
+        
+        if (!article) return null;
+        
+        // 构造原帖URL以获取内容
+        const tid = urlParams.get('tid');
+        if (!tid) return null;
+        
+        try {
+            // 发送请求获取原帖页面
+            const response = await fetch(`https://bbs.nga.cn/read.php?tid=${tid}&page=1`, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'text/html'
+                }
+            });
+            
+            if (!response.ok) return null;
+
+            // 使用GBK解码器
+            const arrayBuffer = await response.arrayBuffer();
+            const decoder = new TextDecoder('gbk');
+            const html = decoder.decode(arrayBuffer);
+            
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            
+            // 查找对应的楼层
+            const postId = `postcontent${article}`;
+            const postElement = doc.getElementById(postId);
+            
+            if (postElement) {
+                // 提取纯文本内容并清理
+                let content = postElement.textContent || postElement.innerText;
+                // 移除可能的多余空白字符
+                content = content.replace(/\s+/g, ' ').trim();
+                return content;
+            }
+        } catch (error) {
+            console.error('获取被回复内容失败:', error);
+        }
+        
+        return null;
+    }
+
     // 增加AI润色按钮
     function addAIButton() {
         if (!isPostEditorPage()) return;
@@ -98,6 +147,10 @@
             aiButton.disabled = true;
             
             try {
+                // 获取被回复的楼层内容
+                const quotedContent = await getQuotedPostContent();
+                console.log(`当前回复的楼层的内容是：${quotedContent}`)
+                
                 // 创建分隔符
                 const sepText='\n\n=====================以下是润色后的回复===================\n\n'
                 
@@ -105,7 +158,7 @@
                 editor.value += sepText;
                 
                 // 调用LLM API，处理文本（流式输出）
-                await callAIEnhancementAPIStream(originalContent, apiKey, (chunk) => {
+                await callAIEnhancementAPIStream(originalContent, quotedContent, apiKey, (chunk) => {
                     // 流式输出到编辑器
                     editor.value += chunk;
                     // 自动滚动到底部
@@ -123,8 +176,30 @@
     }
 
     // 调用LLM API，处理文本（流式输出）
-    async function callAIEnhancementAPIStream(content, apiKey, onChunk) {
+    async function callAIEnhancementAPIStream(content, quotedContent, apiKey, onChunk) {
         const apiUrl = 'https://api.deepseek.com/v1/chat/completions';
+        
+        // 构造消息上下文
+        const messages = [
+            {
+                role: "system",
+                content: `你是一个专业的中文文案编辑，你的任务是润色和改进用户提供的文本，使其更加流畅、专业和易读，同时保持原意不变。请直接返回修改后的文本，不要添加任何解释或额外内容。`
+            }
+        ];
+        
+        // 如果有被引用的内容，添加到上下文中
+        if (quotedContent) {
+            messages.push({
+                role: "user",
+                content: `以下是需要回复的原帖内容：${quotedContent}`
+            });
+        }
+        
+        // 添加用户需要润色的内容
+        messages.push({
+            role: "user",
+            content: `请润色以下回复文本：${content}`
+        });
         
         const response = await fetch(apiUrl, {
             method: 'POST',
@@ -135,16 +210,7 @@
             },
             body: JSON.stringify({
                 model: "deepseek-chat",
-                messages: [
-                    {
-                        role: "system",
-                        content: `你是一个专业的中文文案编辑，你的任务是润色和改进用户提供的文本，使其更加流畅、专业和易读，同时保持原意不变。请直接返回修改后的文本，不要添加任何解释或额外内容。`
-                    },
-                    {
-                        role: "user",
-                        content: `请润色以下文本：${content}`
-                    }
-                ],
+                messages: messages,
                 temperature: 0.7,
                 stream: true
             })
