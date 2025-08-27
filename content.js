@@ -12,6 +12,15 @@
 (function() {
     'use strict';
 
+    // 提取回复块的函数
+    function extractReplyBlocks(content) {
+        const replyBlockRegex = /\[b\][\s\S]*?\[\/b\]/g;        
+        const replyBlocks = content.match(replyBlockRegex) || [];
+        // 移除回复块后的内容（保留其他文本）
+        const remainingContent = content.replace(replyBlockRegex, '');
+        return {replyBlocks, remainingContent};
+    }
+
     // 查找页面上的回复框
     function isPostEditorPage() {
         const editorSelector = ['textarea[name="post_content"]'];
@@ -133,10 +142,10 @@
     // AO润色
     async function enhancePostContent(editor) {
         // 获取当前输入内容
-        const originalContent = editor.value.trim();
+        const originalContent = editor.value;
 
         // 如果没有内容，弹出提示
-        if (!originalContent) {
+        if (!originalContent.trim()) {
             alert('请先输入回帖内容');
             return;
         }
@@ -156,6 +165,11 @@
             aiButton.disabled = true;
             
             try {
+                // 提取回复块
+                const { replyBlocks, remainingContent } = extractReplyBlocks(originalContent);
+                console.log(`回复代码：${replyBlocks}`)
+                console.log(`待润色的回复内容：${remainingContent}`)
+                
                 // 获取被回复的楼层内容
                 const quotedContent = await getQuotedPostContent();
                 console.log(`当前回复的楼层的内容是：${quotedContent}`)
@@ -163,11 +177,11 @@
                 // 创建分隔符
                 const sepText='\n\n=====================以下是润色后的回复===================\n\n'
                 
-                // 添加分隔符
-                editor.value += sepText;
+                // 添加分隔符和回复块
+                editor.value += sepText + replyBlocks;
                 
                 // 调用LLM API，处理文本（流式输出）
-                await callAIEnhancementAPIStream(originalContent, quotedContent, apiKey, (chunk) => {
+                await callAIEnhancementAPIStream(remainingContent, quotedContent, apiKey, (chunk) => {
                     // 流式输出到编辑器
                     editor.value += chunk;
                     // 自动滚动到底部
