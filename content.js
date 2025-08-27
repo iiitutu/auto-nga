@@ -101,8 +101,11 @@
                 // 调用LLM API，处理文本
                 const enhancedContent = await callAIEnhancementAPI(originalContent, apiKey);
                 
+                const sepText='\n\n=====================以下是润色后的回复===================\n\n'
+
                 // 文本替换
-                editor.value = enhancedContent;
+                editor.value += sepText
+                editor.value += enhancedContent;
             } catch (error) {
                 console.error('AI增强失败:', error);
                 alert('AI增强失败: ' + error.message);
@@ -129,7 +132,7 @@
                 messages: [
                     {
                         role: "system",
-                        content: "你是一个专业的中文文案编辑，你的任务是润色和改进用户提供的文本，使其更加流畅、专业和易读，同时保持原意不变。请直接返回修改后的文本，不要添加任何解释或额外内容。"
+                        content: `你是一个专业的中文文案编辑，你的任务是润色和改进用户提供的文本，使其更加流畅、专业和易读，同时保持原意不变。请直接返回修改后的文本，不要添加任何解释或额外内容。`
                     },
                     {
                         role: "user",
