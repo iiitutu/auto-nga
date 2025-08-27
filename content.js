@@ -38,9 +38,9 @@
     async function getQuotedPostContent() {
         // 检查是否是回复页面
         const urlParams = new URLSearchParams(window.location.search);
-        const article = urlParams.get('article');
+        let article = urlParams.get('article');
         
-        if (!article) return null;
+        if (!article) article = 0;
         
         // 构造原帖URL以获取内容
         const tid = urlParams.get('tid');
