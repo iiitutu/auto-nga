@@ -31,8 +31,17 @@
         if (!tid) return null;
         
         try {
+            // 计算楼层所在的页数（每页20层，第一页1-19，第二页20-39，以此类推）
+            const postsPerPage = 20;
+            let pageNumber;
+            if (article < 20) {
+                pageNumber = 1; // 第一页是1-19层
+            } else {
+                pageNumber = Math.floor((article - 1) / postsPerPage) + 1; // 从第20层开始按20层每页计算
+            }
+            
             // 发送请求获取原帖页面
-            const response = await fetch(`https://bbs.nga.cn/read.php?tid=${tid}&page=1`, {
+            const response = await fetch(`https://bbs.nga.cn/read.php?tid=${tid}&page=${pageNumber}`, {
                 method: 'GET',
                 headers: {
                     'Accept': 'text/html'
