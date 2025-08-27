@@ -98,14 +98,19 @@
             aiButton.disabled = true;
             
             try {
-                // 调用LLM API，处理文本
-                const enhancedContent = await callAIEnhancementAPI(originalContent, apiKey);
-                
+                // 创建分隔符
                 const sepText='\n\n=====================以下是润色后的回复===================\n\n'
-
-                // 文本替换
-                editor.value += sepText
-                editor.value += enhancedContent;
+                
+                // 添加分隔符
+                editor.value += sepText;
+                
+                // 调用LLM API，处理文本（流式输出）
+                await callAIEnhancementAPIStream(originalContent, apiKey, (chunk) => {
+                    // 流式输出到编辑器
+                    editor.value += chunk;
+                    // 自动滚动到底部
+                    editor.scrollTop = editor.scrollHeight;
+                });
             } catch (error) {
                 console.error('AI增强失败:', error);
                 alert('AI增强失败: ' + error.message);
@@ -117,15 +122,16 @@
         });
     }
 
-    // 调用LLM API，处理文本
-    async function callAIEnhancementAPI(content, apiKey) {
+    // 调用LLM API，处理文本（流式输出）
+    async function callAIEnhancementAPIStream(content, apiKey, onChunk) {
         const apiUrl = 'https://api.deepseek.com/v1/chat/completions';
         
         const response = await fetch(apiUrl, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${apiKey}`
+                'Authorization': `Bearer ${apiKey}`,
+                'Accept': 'text/event-stream'
             },
             body: JSON.stringify({
                 model: "deepseek-chat",
@@ -139,7 +145,8 @@
                         content: `请润色以下文本：${content}`
                     }
                 ],
-                temperature: 0.7
+                temperature: 0.7,
+                stream: true
             })
         });
         
@@ -147,8 +154,56 @@
             throw new Error(`API请求失败: ${response.status} ${response.statusText}`);
         }
         
-        const data = await response.json();
-        return data.choices[0].message.content.trim();
+        // 处理流式响应
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder('utf-8');
+        let buffer = '';
+        
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            
+            buffer += decoder.decode(value, { stream: true });
+            
+            // 按行处理数据
+            const lines = buffer.split('\n');
+            buffer = lines.pop(); // 保留不完整的行
+            
+            for (const line of lines) {
+                if (line.startsWith('data: ')) {
+                    const data = line.slice(6);
+                    if (data === '[DONE]') {
+                        return;
+                    }
+                    
+                    try {
+                        const parsed = JSON.parse(data);
+                        const content = parsed.choices[0]?.delta?.content;
+                        if (content) {
+                            onChunk(content);
+                        }
+                    } catch (e) {
+                        console.error('Error parsing stream data:', e);
+                    }
+                }
+            }
+        }
+        
+        // 处理剩余数据
+        if (buffer.startsWith('data: ')) {
+            const data = buffer.slice(6);
+            if (data !== '[DONE]') {
+                try {
+                    const parsed = JSON.parse(data);
+                    const content = parsed.choices[0]?.delta?.content;
+                    if (content) {
+                        onChunk(content);
+                    }
+                } catch (e) {
+                    console.error('Error parsing stream data:', e);
+                }
+            }
+        }
     }
 
     // 初始化

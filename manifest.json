@@ -9,7 +9,8 @@
   ],
   "host_permissions": [
     "*://bbs.nga.cn/*",
-    "*://nga.178.com/*"
+    "*://nga.178.com/*",
+    "https://api.deepseek.com/*"
   ],
   "content_scripts": [
     {
