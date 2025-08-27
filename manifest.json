@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "NGA Forum Enhancer",
+  "name": "NGA回帖增强器",
   "version": "1.0",
-  "description": "Enhance NGA forum experience with AI-powered post editing.",
+  "description": "NGA论坛的AI智能润色、回复",
   "permissions": [
     "activeTab",
     "storage"
