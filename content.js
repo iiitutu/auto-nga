@@ -139,7 +139,7 @@
         toolbar.appendChild(aiButton);
     }
 
-    // AO润色
+    // AI润色
     async function enhancePostContent(editor) {
         // 获取当前输入内容
         const originalContent = editor.value;
@@ -166,19 +166,23 @@
             
             try {
                 // 提取回复块
-                const { replyBlocks, remainingContent } = extractReplyBlocks(originalContent);
-                console.log(`回复代码：${replyBlocks}`)
-                console.log(`待润色的回复内容：${remainingContent}`)
+                let { replyBlocks, remainingContent } = extractReplyBlocks(originalContent);
+                console.log(`回复代码：${replyBlocks[0]}`)
                 
+                // 创建分隔符
+                const sepText='\n\n=====================以下是润色后的回复===================\n\n'
+
+                // 如果已有润色内容，则只看原文
+                remainingContent = remainingContent.split(sepText)[0] 
+                console.log(`待润色的回复内容：${remainingContent}`)
+
+
                 // 获取被回复的楼层内容
                 const quotedContent = await getQuotedPostContent();
                 console.log(`当前回复的楼层的内容是：${quotedContent}`)
                 
-                // 创建分隔符
-                const sepText='\n\n=====================以下是润色后的回复===================\n\n'
-                
                 // 添加分隔符和回复块
-                editor.value += sepText + replyBlocks;
+                editor.value += sepText + replyBlocks[0];
                 
                 // 调用LLM API，处理文本（流式输出）
                 await callAIEnhancementAPIStream(remainingContent, quotedContent, apiKey, (chunk) => {
