@@ -335,23 +335,58 @@
                 let { replyBlocks, remainingContent } = extractReplyBlocks(originalContent);
                 console.log(`回复代码：${replyBlocks[0]}`)
 
-                // 创建分隔符
-                const sepText='\n\n=====================以下是增强后的回复===================\n\n'
+                // 获取AI增强设置
+                const settings = await new Promise((resolve) => {
+                    chrome.storage.local.get(['aiEnhancerSettings'], function(result) {
+                        resolve(result.aiEnhancerSettings || DEFAULT_SETTINGS);
+                    });
+                });
+
+                // 设置值到显示文本的映射
+                const getDisplayText = (type, value) => {
+                    const mappings = {
+                        tone: {
+                            'nga': 'NGA',
+                            'zhihu': '知乎',
+                            'rednote': '小红书',
+                            'tieba': '贴吧',
+                            'tiktok': '抖音'
+                        },
+                        attitude: {
+                            'family': '极度友好',
+                            'friendly': '友好',
+                            'neutral': '中性',
+                            'negative': '不友好',
+                            'enemy': '极度不友好'
+                        },
+                        verbosity: {
+                            'lower': '极度简洁',
+                            'low': '简洁',
+                            'medium': '适中',
+                            'high': '详细',
+                            'higher': '极度详细'
+                        }
+                    };
+                    return mappings[type][value] || value;
+                };
+
+                // 创建包含设置信息的分隔符
+                const sepText = `\n\n============以下是增强后的回复，参数：风格=${getDisplayText('tone', settings.tone)}, 态度=${getDisplayText('attitude', settings.attitude)}, 详细程度=${getDisplayText('verbosity', settings.verbosity)}===================\n\n`;
 
                 // 如果已有增强内容，则只看原文
-                remainingContent = remainingContent.split(sepText)[0] 
-                console.log(`待增强的回复内容：${remainingContent}`)
+                remainingContent = remainingContent.split('============以下是增强后的回复，参数：')[0]; 
+                console.log(`待增强的回复内容：${remainingContent}`);
 
 
                 // 获取被回复的楼层内容
                 const quotedContent = await getQuotedPostContent();
-                console.log(`当前回复的楼层的内容是：${quotedContent}`)
+                console.log(`当前回复的楼层的内容是：${quotedContent}`);
                 
                 // 添加分隔符和回复块
                 editor.value += sepText + replyBlocks[0];
                 
                 // 调用LLM API，处理文本（流式输出）
-                await callAIEnhancementAPIStream(remainingContent, quotedContent, apiKey, (chunk) => {
+                await callAIEnhancementAPIStream(remainingContent, quotedContent, apiKey, settings, (chunk) => {
                     // 流式输出到编辑器
                     editor.value += chunk;
                     // 自动滚动到底部
@@ -369,42 +404,37 @@
     }
 
     // 调用LLM API，处理文本（流式输出）
-    async function callAIEnhancementAPIStream(content, quotedContent, apiKey, onChunk) {
+    async function callAIEnhancementAPIStream(content, quotedContent, apiKey, settings, onChunk) {
         const apiUrl = 'https://api.deepseek.com/v1/chat/completions';
         
-        // 获取设置
-        chrome.storage.local.get(['aiEnhancerSettings'], function(result) {
-            const settings = result.aiEnhancerSettings || DEFAULT_SETTINGS;
-            
-            // 根据设置生成系统提示
-            const systemPrompt = generateSystemPrompt(settings);
-            console.log(systemPrompt)
-            
-            // 构造消息上下文
-            const messages = [
-                {
-                    role: "system",
-                    content: systemPrompt
-                }
-            ];
-            
-            // 如果有被引用的内容，添加到上下文中
-            if (quotedContent) {
-                messages.push({
-                    role: "user",
-                    content: `以下是需要回复的原帖内容：${quotedContent}`
-                });
+        // 根据设置生成系统提示
+        const systemPrompt = generateSystemPrompt(settings);
+        console.log(systemPrompt)
+        
+        // 构造消息上下文
+        const messages = [
+            {
+                role: "system",
+                content: systemPrompt
             }
-            
-            // 添加用户需要增强的内容
+        ];
+        
+        // 如果有被引用的内容，添加到上下文中
+        if (quotedContent) {
             messages.push({
                 role: "user",
-                    content: `请润色以下回复文本：${content}`
-                });
-                
-                // 继续执行API调用
-                performAPIRequest(apiUrl, messages, apiKey, onChunk);
+                content: `以下是需要回复的原帖内容：${quotedContent}`
             });
+        }
+        
+        // 添加用户需要增强的内容
+        messages.push({
+            role: "user",
+                content: `请润色以下回复文本：${content}`
+            });
+            
+            // 继续执行API调用
+            performAPIRequest(apiUrl, messages, apiKey, onChunk);
         }
         
         // 生成系统提示
