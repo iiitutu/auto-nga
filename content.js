@@ -92,7 +92,7 @@
         return null;
     }
 
-    // 增加AI润色按钮
+    // 增加AI增强按钮
     function addAIButton() {
         if (!isPostEditorPage()) return;
 
@@ -102,8 +102,8 @@
         
         if (!editor) return;
 
-        // 找到放AI润色按钮的工具栏
-        let toolbar = document.querySelector('.c2') 
+        // 找到放AI增强按钮的工具栏
+        let toolbar = document.querySelectorAll('.c2')[-2] 
         
         // 如果没找到，创造一个
         if (!toolbar) {
@@ -123,10 +123,10 @@
         // 检查是否已有按钮
         if (document.getElementById('ai-enhance-btn')) return;
         
-        // 新增AI润色按钮
+        // 新增AI增强按钮
         const aiButton = document.createElement('button');
         aiButton.id = 'ai-enhance-btn';
-        aiButton.textContent = 'AI润色';
+        aiButton.textContent = 'AI增强';
         aiButton.style.cssText = `
             padding: 5px 10px;
             background-color: #4CAF50;
@@ -193,7 +193,7 @@
         `;
         
         popup.innerHTML = `
-            <h3 style="margin-top: 0;">AI润色设置</h3>
+            <h3 style="margin-top: 0;">AI增强设置</h3>
             <div style="margin-bottom: 15px;">
                 <label style="display: block; margin-bottom: 5px;">风格:</label>
                 <select id="ai-tone-select" style="width: 100%; padding: 5px;">
@@ -305,7 +305,7 @@
         });
     }
 
-    // AI润色
+    // AI增强
     async function enhancePostContent(editor) {
         // 获取当前输入内容
         const originalContent = editor.value;
@@ -336,11 +336,11 @@
                 console.log(`回复代码：${replyBlocks[0]}`)
 
                 // 创建分隔符
-                const sepText='\n\n=====================以下是润色后的回复===================\n\n'
+                const sepText='\n\n=====================以下是增强后的回复===================\n\n'
 
-                // 如果已有润色内容，则只看原文
+                // 如果已有增强内容，则只看原文
                 remainingContent = remainingContent.split(sepText)[0] 
-                console.log(`待润色的回复内容：${remainingContent}`)
+                console.log(`待增强的回复内容：${remainingContent}`)
 
 
                 // 获取被回复的楼层内容
@@ -396,7 +396,7 @@
                 });
             }
             
-            // 添加用户需要润色的内容
+            // 添加用户需要增强的内容
             messages.push({
                 role: "user",
                     content: `请润色以下回复文本：${content}`
