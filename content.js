@@ -22,7 +22,7 @@
     // 提取回复块的函数
     function extractReplyBlocks(content) {
         const replyBlockRegex = /\[b\][\s\S]*?\[\/b\]/g;        
-        const replyBlocks = content.match(replyBlockRegex) || [];
+        const replyBlocks = content.match(replyBlockRegex) || [''];
         // 移除回复块后的内容（保留其他文本）
         const remainingContent = content.replace(replyBlockRegex, '');
         return {replyBlocks, remainingContent};
@@ -334,7 +334,7 @@
                 // 提取回复块
                 let { replyBlocks, remainingContent } = extractReplyBlocks(originalContent);
                 console.log(`回复代码：${replyBlocks[0]}`)
-                
+
                 // 创建分隔符
                 const sepText='\n\n=====================以下是润色后的回复===================\n\n'
 
