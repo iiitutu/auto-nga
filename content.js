@@ -19,9 +19,9 @@
         }
         
         const replyBlocks = content.match(replyBlockRegex) || [''];
+        // 移除回复块后的内容（保留其他文本）
         const remainingContent = content.replace(replyBlockRegex, '');
         return {replyBlocks, remainingContent};
-        // 移除回复块后的内容（保留其他文本）
     }
 
     // 查找页面上的回复框
