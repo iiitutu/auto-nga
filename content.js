@@ -1,14 +1,3 @@
-// ==UserScript==
-// @name         NGA Forum Enhancer
-// @namespace    http://tampermonkey.net/
-// @version      0.1
-// @description  Enhance NGA forum with AI-powered post editing
-// @author       You
-// @match        *://bbs.nga.cn/*
-// @match        *://nga.178.com/*
-// @grant        none
-// ==/UserScript==
-
 (function() {
     'use strict';
 
@@ -21,11 +10,18 @@
 
     // 提取回复块的函数
     function extractReplyBlocks(content) {
-        const replyBlockRegex = /\[b\][\s\S]*?\[\/b\]/g;        
+        
+        let replyBlockRegex = ''
+        if (content.startsWith('[b]')){
+            replyBlockRegex = /\[b\][\s\S]*?\[\/b\]/g;        
+        }else if (content.startsWith('[quote]')){
+            replyBlockRegex = /\[quote\][\s\S]*?\[\/quote\]/g;
+        }
+        
         const replyBlocks = content.match(replyBlockRegex) || [''];
-        // 移除回复块后的内容（保留其他文本）
         const remainingContent = content.replace(replyBlockRegex, '');
         return {replyBlocks, remainingContent};
+        // 移除回复块后的内容（保留其他文本）
     }
 
     // 查找页面上的回复框
