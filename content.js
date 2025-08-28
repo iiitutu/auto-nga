@@ -24,11 +24,6 @@
         return {replyBlocks, remainingContent};
     }
 
-    // 查找页面上的回复框
-    function isPostEditorPage() {
-        const editorSelector = ['textarea[name="post_content"]'];
-        return editorSelector.some(selector => document.querySelector(selector) !== null);
-    }
 
     // 获取被回复楼层的内容
     async function getQuotedPostContent() {
@@ -90,19 +85,16 @@
 
     // 增加AI增强按钮
     function addAIButton() {
-        if (!isPostEditorPage()) return;
 
         // 找到页面上的回复框
-        const editorSelector = ['textarea[name="post_content"]'];
-        let editor = document.querySelector(editorSelector);
-        
+        let editor = document.querySelector('textarea[name="post_content"]');
         if (!editor) return;
 
-        // 找到放AI增强按钮的工具栏
-        let toolbar = document.querySelectorAll('.c2')[-2] 
+        // // 找到放AI增强按钮的工具栏
+        let toolbar = document.querySelector('.ai-enhancer-toolbar')
         
-        // 如果没找到，创造一个
-        if (!toolbar) {
+        // 如果没有，创造一个工具栏
+        if (!toolbar){
             toolbar = document.createElement('div');
             toolbar.className = 'ai-enhancer-toolbar';
             toolbar.style.cssText = `
